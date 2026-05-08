@@ -63,6 +63,7 @@ type Config struct {
 	CodexSemanticInactivityTimeout time.Duration
 	ClaudeArgs                     []string
 	CodexArgs                      []string
+	AvailableSlots                 []string // optional values indexed by task slot
 }
 
 // Overrides allows CLI flags to override environment variables and defaults.
@@ -186,6 +187,7 @@ func LoadConfig(overrides Overrides) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	availableSlots := splitCSV(os.Getenv("MULTICA_AVAILABLE_SLOTS"))
 
 	// Host info
 	host, err := os.Hostname()
@@ -344,6 +346,7 @@ func LoadConfig(overrides Overrides) (Config, error) {
 		CodexSemanticInactivityTimeout: codexSemanticInactivityTimeout,
 		ClaudeArgs:                     claudeArgs,
 		CodexArgs:                      codexArgs,
+		AvailableSlots:                 availableSlots,
 	}, nil
 }
 
@@ -441,4 +444,19 @@ func shellArgsFromEnv(name string) ([]string, error) {
 		return nil, fmt.Errorf("invalid %s: %w", name, err)
 	}
 	return args, nil
+}
+
+// splitCSV splits a comma-separated string into trimmed non-empty tokens.
+func splitCSV(s string) []string {
+	if strings.TrimSpace(s) == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
